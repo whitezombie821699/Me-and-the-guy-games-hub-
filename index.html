@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Game Backup Library</title>
     
-    <!-- PWA Manifest for Home Screen Installation -->
+    <!-- PWA Web Manifest for Home Screen App Installation -->
     <link rel="manifest" href='data:application/manifest+json,{"name":"Game Backup Library","short_name":"GameLib","start_url":".","display":"standalone","background_color":"#121212","theme_color":"#007acc"}'>
 
     <style>
@@ -16,12 +16,19 @@
             --bg-color: #121212;
             --panel-bg: #1e1e1e;
             --accent-color: #007acc;
-            --border-color: #333333;
+            --danger-color: #d9534f;
+            --success-color: #28a745;
             --text-color: #ffffff;
             --text-muted: #aaaaaa;
+            --border-color: #333333;
+            --card-width: 120px;
+            --card-height: 160px;
         }
 
-        * { box-sizing: border-box; touch-action: manipulation; }
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -43,9 +50,61 @@
             z-index: 100;
         }
 
-        h1 { margin: 0 0 10px 0; font-size: 1.2rem; text-align: center; }
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            text-align: center;
+        }
 
-        .toolbar { display: flex; flex-direction: column; gap: 8px; }
+        .toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 14px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .filter-select {
+            flex: 1;
+            padding: 8px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .slider-container input {
+            flex: 1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
 
         .btn {
             background-color: var(--accent-color);
@@ -56,45 +115,387 @@
             font-weight: bold;
             font-size: 0.85rem;
             cursor: pointer;
-            text-align: center;
             flex: 1;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .btn:disabled {
+            background-color: #555555;
+            cursor: not-allowed;
+            color: #888888;
         }
 
         .btn-secondary { background-color: #333333; }
-        .action-row { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-batch { background-color: var(--success-color); }
 
-        .container { padding: 16px; text-align: center; flex: 1; }
-        .card { background: var(--panel-bg); padding: 16px; border-radius: 8px; border: 1px solid var(--border-color); margin-top: 12px; }
+        .main-container {
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        .library-panel {
+            flex: 2;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
+            gap: 12px;
+        }
+
+        .game-card {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .game-card:active {
+            transform: scale(0.97);
+        }
+
+        .game-card img {
+            width: 100%;
+            height: var(--card-height);
+            object-fit: cover;
+            background-color: #2a2a2a;
+            display: block;
+        }
+
+        .game-card-info {
+            padding: 8px;
+        }
+
+        .game-card-title {
+            font-weight: bold;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .game-card-format {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .details-panel {
+            flex: 1;
+            padding: 16px;
+            background-color: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .details-cover {
+            width: 160px;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .details-field {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .details-field label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .details-field span {
+            font-size: 0.95rem;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .details-panel {
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+                width: 100%;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🎮 Game Backup Library (PWA)</h1>
+        <h1>🎮 Game Backup Library</h1>
         <div class="toolbar">
-            <div class="action-row">
-                <button class="btn" onclick="downloadSourceAsTxt()">💾 Export Source (.TXT)</button>
-                <button class="btn btn-secondary" onclick="exportJSON()">📥 Export Data</button>
+            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search title, platform, format..." oninput="filterGames()">
+            
+            <div class="filter-row">
+                <select id="platformFilterSelect" class="filter-select" onchange="filterGames()">
+                    <option value="ALL">All Platforms</option>
+                    <option value="PS3">PlayStation 3</option>
+                    <option value="PS2">PlayStation 2</option>
+                    <option value="PS1">PlayStation 1</option>
+                    <option value="PC">PC / Custom</option>
+                </select>
+
+                <select id="sortSelect" class="filter-select" onchange="filterGames()">
+                    <option value="AZ">Sort: A to Z</option>
+                    <option value="ZA">Sort: Z to A</option>
+                    <option value="PLATFORM">Sort: Platform</option>
+                </select>
             </div>
+
+            <div class="slider-container">
+                <span>Card Size:</span>
+                <input type="range" id="cardSizeSlider" min="90" max="180" value="120" oninput="resizeCards(this.value)">
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn" onclick="openAddModal()">+ Add 1</button>
+                <button class="btn btn-batch" onclick="openBatchModal()">📚 Add 20+</button>
+                <button class="btn btn-secondary" onclick="exportJSON()">📥 Export Data</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFileInput').click()">📤 Import Data</button>
+                <button class="btn btn-secondary" onclick="downloadSourceAsTxt()">💾 Export Source (.TXT)</button>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importJSON(event)">
         </div>
     </header>
 
-    <div class="container">
-        <div class="card">
-            <h3>Install as Home Screen App ("Gem")</h3>
-            <p style="color: var(--text-muted); font-size: 0.85rem;">
-                Tap your mobile browser menu (three dots) and select <strong>"Add to Home screen"</strong> or <strong>"Install App"</strong> to run this offline like a native app.
-            </p>
+    <div class="main-container">
+        <div class="library-panel">
+            <div id="gameGrid" class="game-grid"></div>
+        </div>
+
+        <div class="details-panel" id="detailsPanel">
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Select a game backup to view details</p>
+        </div>
+    </div>
+
+    <!-- Single Game Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;" id="modalTitle">Add Single Game Entry</h3>
+            
+            <div class="form-group">
+                <label>RAWG API Key (Needed for auto-cover):</label>
+                <input type="text" id="apiKeyInput" placeholder="Enter RAWG Key">
+            </div>
+
+            <div class="form-group">
+                <label>Game Title:</label>
+                <input type="text" id="titleInput" placeholder="e.g. God of War">
+            </div>
+
+            <div class="form-group">
+                <label>Platform:</label>
+                <select id="platformSelect">
+                    <option value="PS3">PlayStation 3</option>
+                    <option value="PS2" selected>PlayStation 2</option>
+                    <option value="PS1">PlayStation 1</option>
+                    <option value="PC">PC / Custom</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Custom Cover Image URL (Optional):</label>
+                <input type="text" id="coverUrlInput" placeholder="https://...">
+            </div>
+
+            <div class="form-group">
+                <label>Backup File (Optional):</label>
+                <input type="file" id="fileInput" onchange="autoFillTitle(this)">
+            </div>
+
+            <div class="form-group">
+                <label>Custom Local Cover File (Optional):</label>
+                <input type="file" id="coverFileInput" accept="image/*">
+            </div>
+
+            <div id="statusMsg" style="font-size: 0.8rem; color: var(--accent-color); margin-bottom: 10px;"></div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                <button class="btn" onclick="saveGameBackup()" id="saveSingleBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Add Modal -->
+    <div class="modal" id="batchModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">Batch Add Games</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -10px;">Paste a list of game titles (one per line) to automatically fetch covers.</p>
+
+            <div class="form-group">
+                <label>RAWG API Key:</label>
+                <input type="text" id="batchApiKeyInput" placeholder="Enter RAWG Key">
+            </div>
+
+            <div class="form-group">
+                <label>Default Platform for this batch:</label>
+                <select id="batchPlatformSelect">
+                    <option value="PS3">PlayStation 3</option>
+                    <option value="PS2" selected>PlayStation 2</option>
+                    <option value="PS1">PlayStation 1</option>
+                    <option value="PC">PC / Custom</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>List of Game Titles:</label>
+                <textarea id="batchInput" rows="8" placeholder="Grand Theft Auto: San Andreas\nMetal Gear Solid 3: Snake Eater\nShadow of the Colossus"></textarea>
+            </div>
+
+            <div id="batchStatusMsg" style="font-size: 0.8rem; color: var(--accent-color); margin-bottom: 10px; font-weight: bold;"></div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="closeBatchModal()" id="batchCancelBtn">Cancel</button>
+                <button class="btn btn-batch" onclick="saveBatchGames()" id="batchSaveBtn">Start Batch Import</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Export the current page's HTML code as a plain .txt file
+        const DEFAULT_CATALOG = [
+            { title: "Grand Theft Auto: San Andreas", platform: "PS2", fileName: "Grand_Theft_Auto_San_Andreas.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/c/c4/GTASABOX.jpg" },
+            { title: "Metal Gear Solid 3: Snake Eater", platform: "PS2", fileName: "Metal_Gear_Solid_3_Snake_Eater.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/8/85/Mgs3_box_art.jpg" },
+            { title: "Shadow of the Colossus", platform: "PS2", fileName: "Shadow_of_the_Colossus.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Resident Evil 4", platform: "PS2", fileName: "Resident_Evil_4.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "God of War II", platform: "PS2", fileName: "God_of_War_II.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/9/90/God_of_War_II_cover.jpg" },
+            { title: "Need for Speed: Underground 2", platform: "PS2", fileName: "Need_for_Speed_Underground_2.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Final Fantasy X", platform: "PS2", fileName: "Final_Fantasy_X.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Silent Hill 2", platform: "PS2", fileName: "Silent_Hill_2.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/9/95/Silent_Hill_2_cover.jpg" },
+            { title: "Grand Theft Auto: Vice City", platform: "PS2", fileName: "Grand_Theft_Auto_Vice_City.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Need for Speed: Underground", platform: "PS2", fileName: "Need_for_Speed_Underground.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Devil May Cry 3: Dante's Awakening", platform: "PS2", fileName: "Devil_May_Cry_3.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Metal Gear Solid 2: Sons of Liberty", platform: "PS2", fileName: "Metal_Gear_Solid_2.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "God of War", platform: "PS2", fileName: "God_of_War.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Burnout 3: Takedown", platform: "PS2", fileName: "Burnout_3_Takedown.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Okami", platform: "PS2", fileName: "Okami.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Gran Turismo 4", platform: "PS2", fileName: "Gran_Turismo_4.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Ico", platform: "PS2", fileName: "Ico.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Persona 4", platform: "PS2", fileName: "Persona_4.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Tony Hawk's Pro Skater 3", platform: "PS2", fileName: "Tony_Hawks_Pro_Skater_3.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Kingdom Hearts II", platform: "PS2", fileName: "Kingdom_Hearts_II.iso", fileSize: "N/A", format: "ISO", coverUrl: "" }
+        ];
+
+        let gameLibrary = JSON.parse(localStorage.getItem('game_backup_library'));
+        let editingIndex = null;
+        
+        if (!gameLibrary || gameLibrary.length === 0) {
+            gameLibrary = DEFAULT_CATALOG;
+            localStorage.setItem('game_backup_library', JSON.stringify(gameLibrary));
+        }
+
+        let savedApiKey = localStorage.getItem('rawg_api_key') || "";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderLibrary(gameLibrary);
+            if (savedApiKey) {
+                document.getElementById('apiKeyInput').value = savedApiKey;
+                document.getElementById('batchApiKeyInput').value = savedApiKey;
+            }
+        });
+
+        function resizeCards(widthVal) {
+            let heightVal = Math.round(widthVal * 1.33);
+            document.documentElement.style.setProperty('--card-width', `${widthVal}px`);
+            document.documentElement.style.setProperty('--card-height', `${heightVal}px`);
+        }
+
+        function filterGames() {
+            let query = document.getElementById('searchInput').value.toLowerCase().trim();
+            let platformFilter = document.getElementById('platformFilterSelect').value;
+            let sortType = document.getElementById('sortSelect').value;
+
+            let filtered = gameLibrary.filter(game => {
+                let matchesQuery = !query || (
+                    (game.title || '').toLowerCase().includes(query) ||
+                    (game.platform || '').toLowerCase().includes(query) ||
+                    (game.format || '').toLowerCase().includes(query) ||
+                    (game.fileName || '').toLowerCase().includes(query)
+                );
+
+                let matchesPlatform = (platformFilter === 'ALL') || (game.platform === platformFilter);
+
+                return matchesQuery && matchesPlatform;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortType === 'AZ') return (a.title || '').localeCompare(b.title || '');
+                if (sortType === 'ZA') return (b.title || '').localeCompare(a.title || '');
+                if (sortType === 'PLATFORM') return (a.platform || '').localeCompare(b.platform || '');
+                return 0;
+            });
+
+            renderLibrary(filtered);
+        }
+
         function downloadSourceAsTxt() {
             const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
             const blob = new Blob([htmlContent], { type: "text/plain;charset=utf-8" });
             const downloadAnchor = document.createElement("a");
-            
             downloadAnchor.href = URL.createObjectURL(blob);
             downloadAnchor.download = "index_app.txt";
             document.body.appendChild(downloadAnchor);
@@ -104,14 +505,759 @@
         }
 
         function exportJSON() {
-            const data = localStorage.getItem('game_backup_library') || "[]";
-            const blob = new Blob([data], { type: "application/json" });
-            const anchor = document.createElement("a");
-            anchor.href = URL.createObjectURL(blob);
-            anchor.download = "game_library_backup.json";
+            if (gameLibrary.length === 0) { alert("Library is empty."); return; }
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gameLibrary, null, 2));
+            let anchor = documen<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007acc">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Game Backup Library</title>
+    
+    <!-- PWA Web Manifest for Home Screen App Installation -->
+    <link rel="manifest" href='data:application/manifest+json,{"name":"Game Backup Library","short_name":"GameLib","start_url":".","display":"standalone","background_color":"#121212","theme_color":"#007acc"}'>
+
+    <style>
+        :root {
+            --bg-color: #121212;
+            --panel-bg: #1e1e1e;
+            --accent-color: #007acc;
+            --danger-color: #d9534f;
+            --success-color: #28a745;
+            --text-color: #ffffff;
+            --text-muted: #aaaaaa;
+            --border-color: #333333;
+            --card-width: 120px;
+            --card-height: 160px;
+        }
+
+        * {
+            box-sizing: border-box;
+            touch-action: manipulation;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: var(--panel-bg);
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 10px 14px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-color);
+            font-size: 0.95rem;
+        }
+
+        .filter-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .filter-select {
+            flex: 1;
+            padding: 8px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            border-radius: 6px;
+            font-size: 0.8rem;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .slider-container input {
+            flex: 1;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 6px;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            min-width: 70px;
+        }
+
+        .btn:disabled {
+            background-color: #555555;
+            cursor: not-allowed;
+            color: #888888;
+        }
+
+        .btn-secondary { background-color: #333333; }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-batch { background-color: var(--success-color); }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        .library-panel {
+            flex: 2;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .game-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(var(--card-width), 1fr));
+            gap: 12px;
+        }
+
+        .game-card {
+            background-color: var(--panel-bg);
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+
+        .game-card:active {
+            transform: scale(0.97);
+        }
+
+        .game-card img {
+            width: 100%;
+            height: var(--card-height);
+            object-fit: cover;
+            background-color: #2a2a2a;
+            display: block;
+        }
+
+        .game-card-info {
+            padding: 8px;
+        }
+
+        .game-card-title {
+            font-weight: bold;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .game-card-format {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+
+        .details-panel {
+            flex: 1;
+            padding: 16px;
+            background-color: var(--panel-bg);
+            border-left: 1px solid var(--border-color);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .details-cover {
+            width: 160px;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 8px;
+            background-color: #2a2a2a;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .details-field {
+            width: 100%;
+            margin-bottom: 8px;
+        }
+
+        .details-field label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .details-field span {
+            font-size: 0.95rem;
+            font-weight: 500;
+            word-break: break-all;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+                overflow-y: auto;
+            }
+
+            .details-panel {
+                border-left: none;
+                border-top: 1px solid var(--border-color);
+                width: 100%;
+            }
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 16px;
+        }
+
+        .modal-content {
+            background-color: var(--panel-bg);
+            padding: 20px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 10px;
+            background-color: #2a2a2a;
+            border: 1px solid var(--border-color);
+            color: white;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: inherit;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎮 Game Backup Library</h1>
+        <div class="toolbar">
+            <input type="text" id="searchInput" class="search-bar" placeholder="🔍 Search title, platform, format..." oninput="filterGames()">
+            
+            <div class="filter-row">
+                <select id="platformFilterSelect" class="filter-select" onchange="filterGames()">
+                    <option value="ALL">All Platforms</option>
+                    <option value="PS3">PlayStation 3</option>
+                    <option value="PS2">PlayStation 2</option>
+                    <option value="PS1">PlayStation 1</option>
+                    <option value="PC">PC / Custom</option>
+                </select>
+
+                <select id="sortSelect" class="filter-select" onchange="filterGames()">
+                    <option value="AZ">Sort: A to Z</option>
+                    <option value="ZA">Sort: Z to A</option>
+                    <option value="PLATFORM">Sort: Platform</option>
+                </select>
+            </div>
+
+            <div class="slider-container">
+                <span>Card Size:</span>
+                <input type="range" id="cardSizeSlider" min="90" max="180" value="120" oninput="resizeCards(this.value)">
+            </div>
+
+            <div class="action-buttons">
+                <button class="btn" onclick="openAddModal()">+ Add 1</button>
+                <button class="btn btn-batch" onclick="openBatchModal()">📚 Add 20+</button>
+                <button class="btn btn-secondary" onclick="exportJSON()">📥 Export Data</button>
+                <button class="btn btn-secondary" onclick="document.getElementById('importFileInput').click()">📤 Import Data</button>
+                <button class="btn btn-secondary" onclick="downloadSourceAsTxt()">💾 Export Source (.TXT)</button>
+            </div>
+            <input type="file" id="importFileInput" accept=".json" style="display: none;" onchange="importJSON(event)">
+        </div>
+    </header>
+
+    <div class="main-container">
+        <div class="library-panel">
+            <div id="gameGrid" class="game-grid"></div>
+        </div>
+
+        <div class="details-panel" id="detailsPanel">
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Select a game backup to view details</p>
+        </div>
+    </div>
+
+    <!-- Single Game Modal -->
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;" id="modalTitle">Add Single Game Entry</h3>
+            
+            <div class="form-group">
+                <label>RAWG API Key (Needed for auto-cover):</label>
+                <input type="text" id="apiKeyInput" placeholder="Enter RAWG Key">
+            </div>
+
+            <div class="form-group">
+                <label>Game Title:</label>
+                <input type="text" id="titleInput" placeholder="e.g. God of War">
+            </div>
+
+            <div class="form-group">
+                <label>Platform:</label>
+                <select id="platformSelect">
+                    <option value="PS3">PlayStation 3</option>
+                    <option value="PS2" selected>PlayStation 2</option>
+                    <option value="PS1">PlayStation 1</option>
+                    <option value="PC">PC / Custom</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Custom Cover Image URL (Optional):</label>
+                <input type="text" id="coverUrlInput" placeholder="https://...">
+            </div>
+
+            <div class="form-group">
+                <label>Backup File (Optional):</label>
+                <input type="file" id="fileInput" onchange="autoFillTitle(this)">
+            </div>
+
+            <div class="form-group">
+                <label>Custom Local Cover File (Optional):</label>
+                <input type="file" id="coverFileInput" accept="image/*">
+            </div>
+
+            <div id="statusMsg" style="font-size: 0.8rem; color: var(--accent-color); margin-bottom: 10px;"></div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+                <button class="btn" onclick="saveGameBackup()" id="saveSingleBtn">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Batch Add Modal -->
+    <div class="modal" id="batchModal">
+        <div class="modal-content">
+            <h3 style="margin-top: 0;">Batch Add Games</h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: -10px;">Paste a list of game titles (one per line) to automatically fetch covers.</p>
+
+            <div class="form-group">
+                <label>RAWG API Key:</label>
+                <input type="text" id="batchApiKeyInput" placeholder="Enter RAWG Key">
+            </div>
+
+            <div class="form-group">
+                <label>Default Platform for this batch:</label>
+                <select id="batchPlatformSelect">
+                    <option value="PS3">PlayStation 3</option>
+                    <option value="PS2" selected>PlayStation 2</option>
+                    <option value="PS1">PlayStation 1</option>
+                    <option value="PC">PC / Custom</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>List of Game Titles:</label>
+                <textarea id="batchInput" rows="8" placeholder="Grand Theft Auto: San Andreas\nMetal Gear Solid 3: Snake Eater\nShadow of the Colossus"></textarea>
+            </div>
+
+            <div id="batchStatusMsg" style="font-size: 0.8rem; color: var(--accent-color); margin-bottom: 10px; font-weight: bold;"></div>
+
+            <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary" onclick="closeBatchModal()" id="batchCancelBtn">Cancel</button>
+                <button class="btn btn-batch" onclick="saveBatchGames()" id="batchSaveBtn">Start Batch Import</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const DEFAULT_CATALOG = [
+            { title: "Grand Theft Auto: San Andreas", platform: "PS2", fileName: "Grand_Theft_Auto_San_Andreas.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/c/c4/GTASABOX.jpg" },
+            { title: "Metal Gear Solid 3: Snake Eater", platform: "PS2", fileName: "Metal_Gear_Solid_3_Snake_Eater.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/8/85/Mgs3_box_art.jpg" },
+            { title: "Shadow of the Colossus", platform: "PS2", fileName: "Shadow_of_the_Colossus.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Resident Evil 4", platform: "PS2", fileName: "Resident_Evil_4.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "God of War II", platform: "PS2", fileName: "God_of_War_II.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/9/90/God_of_War_II_cover.jpg" },
+            { title: "Need for Speed: Underground 2", platform: "PS2", fileName: "Need_for_Speed_Underground_2.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Final Fantasy X", platform: "PS2", fileName: "Final_Fantasy_X.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Silent Hill 2", platform: "PS2", fileName: "Silent_Hill_2.iso", fileSize: "N/A", format: "ISO", coverUrl: "https://upload.wikimedia.org/wikipedia/en/9/95/Silent_Hill_2_cover.jpg" },
+            { title: "Grand Theft Auto: Vice City", platform: "PS2", fileName: "Grand_Theft_Auto_Vice_City.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Need for Speed: Underground", platform: "PS2", fileName: "Need_for_Speed_Underground.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Devil May Cry 3: Dante's Awakening", platform: "PS2", fileName: "Devil_May_Cry_3.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Metal Gear Solid 2: Sons of Liberty", platform: "PS2", fileName: "Metal_Gear_Solid_2.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "God of War", platform: "PS2", fileName: "God_of_War.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Burnout 3: Takedown", platform: "PS2", fileName: "Burnout_3_Takedown.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Okami", platform: "PS2", fileName: "Okami.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Gran Turismo 4", platform: "PS2", fileName: "Gran_Turismo_4.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Ico", platform: "PS2", fileName: "Ico.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Persona 4", platform: "PS2", fileName: "Persona_4.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Tony Hawk's Pro Skater 3", platform: "PS2", fileName: "Tony_Hawks_Pro_Skater_3.iso", fileSize: "N/A", format: "ISO", coverUrl: "" },
+            { title: "Kingdom Hearts II", platform: "PS2", fileName: "Kingdom_Hearts_II.iso", fileSize: "N/A", format: "ISO", coverUrl: "" }
+        ];
+
+        let gameLibrary = JSON.parse(localStorage.getItem('game_backup_library'));
+        let editingIndex = null;
+        
+        if (!gameLibrary || gameLibrary.length === 0) {
+            gameLibrary = DEFAULT_CATALOG;
+            localStorage.setItem('game_backup_library', JSON.stringify(gameLibrary));
+        }
+
+        let savedApiKey = localStorage.getItem('rawg_api_key') || "";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            renderLibrary(gameLibrary);
+            if (savedApiKey) {
+                document.getElementById('apiKeyInput').value = savedApiKey;
+                document.getElementById('batchApiKeyInput').value = savedApiKey;
+            }
+        });
+
+        function resizeCards(widthVal) {
+            let heightVal = Math.round(widthVal * 1.33);
+            document.documentElement.style.setProperty('--card-width', `${widthVal}px`);
+            document.documentElement.style.setProperty('--card-height', `${heightVal}px`);
+        }
+
+        function filterGames() {
+            let query = document.getElementById('searchInput').value.toLowerCase().trim();
+            let platformFilter = document.getElementById('platformFilterSelect').value;
+            let sortType = document.getElementById('sortSelect').value;
+
+            let filtered = gameLibrary.filter(game => {
+                let matchesQuery = !query || (
+                    (game.title || '').toLowerCase().includes(query) ||
+                    (game.platform || '').toLowerCase().includes(query) ||
+                    (game.format || '').toLowerCase().includes(query) ||
+                    (game.fileName || '').toLowerCase().includes(query)
+                );
+
+                let matchesPlatform = (platformFilter === 'ALL') || (game.platform === platformFilter);
+
+                return matchesQuery && matchesPlatform;
+            });
+
+            filtered.sort((a, b) => {
+                if (sortType === 'AZ') return (a.title || '').localeCompare(b.title || '');
+                if (sortType === 'ZA') return (b.title || '').localeCompare(a.title || '');
+                if (sortType === 'PLATFORM') return (a.platform || '').localeCompare(b.platform || '');
+                return 0;
+            });
+
+            renderLibrary(filtered);
+        }
+
+        function downloadSourceAsTxt() {
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: "text/plain;charset=utf-8" });
+            const downloadAnchor = document.createElement("a");
+            downloadAnchor.href = URL.createObjectURL(blob);
+            downloadAnchor.download = "index_app.txt";
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            document.body.removeChild(downloadAnchor);
+            URL.revokeObjectURL(downloadAnchor.href);
+        }
+
+        function exportJSON() {
+            if (gameLibrary.length === 0) { alert("Library is empty."); return; }
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(gameLibrary, null, 2));
+            let anchor = document.createElement('a');
+            anchor.setAttribute("href", dataStr);
+            anchor.setAttribute("download", "game_library_catalog.json");
             document.body.appendChild(anchor);
             anchor.click();
-            document.body.removeChild(anchor);
+            anchor.remove();
+        }
+
+        function importJSON(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let imported = JSON.parse(e.target.result);
+                    if (Array.isArray(imported)) {
+                        gameLibrary = imported;
+                        localStorage.setItem('game_backup_library', JSON.stringify(gameLibrary));
+                        filterGames();
+                        alert("Database successfully updated!");
+                    }
+                } catch (err) {
+                    alert("Failed to parse JSON file.");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function openAddModal() { 
+            editingIndex = null;
+            document.getElementById('modalTitle').innerText = "Add Single Game Entry";
+            document.getElementById('titleInput').value = "";
+            document.getElementById('coverUrlInput').value = "";
+            document.getElementById('addModal').style.display = 'flex'; 
+        }
+
+        function openEditModal(index) {
+            editingIndex = index;
+            let game = gameLibrary[index];
+            document.getElementById('modalTitle').innerText = "Edit Game Entry";
+            document.getElementById('titleInput').value = game.title || "";
+            document.getElementById('platformSelect').value = game.platform || "PS2";
+            document.getElementById('coverUrlInput').value = game.coverUrl || "";
+            document.getElementById('addModal').style.display = 'flex';
+        }
+
+        function closeAddModal() { 
+            document.getElementById('addModal').style.display = 'none';
+            document.getElementById('statusMsg').innerText = "";
+            editingIndex = null;
+        }
+
+        function openBatchModal() { document.getElementById('batchModal').style.display = 'flex'; }
+        function closeBatchModal() { 
+            document.getElementById('batchModal').style.display = 'none';
+            document.getElementById('batchStatusMsg').innerText = "";
+        }
+
+        function autoFillTitle(input) {
+            if (input.files.length > 0 && !document.getElementById('titleInput').value) {
+                let fileName = input.files[0].name;
+                let title = fileName.substring(0, fileName.lastIndexOf('.')) || fileName;
+                document.getElementById('titleInput').value = title.replace(/[-_]/g, ' ');
+            }
+        }
+
+        async function fetchRAWGCover(title, apiKey) {
+            if (!apiKey) return null;
+            try {
+                let response = await fetch(`https://api.rawg.io/api/games?key=${apiKey}&search=${encodeURIComponent(title)}&page_size=1`);
+                if (!response.ok) return null;
+                let data = await response.json();
+                if (data.results && data.results.length > 0) return data.results[0].background_image;
+            } catch (err) {
+                console.error("RAWG Error:", err);
+            }
+            return null;
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve) => {
+                let reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function saveGameBackup() {
+            let statusDiv = document.getElementById('statusMsg');
+            let title = document.getElementById('titleInput').value.trim();
+            let platform = document.getElementById('platformSelect').value;
+            let fileInput = document.getElementById('fileInput');
+            let apiKey = document.getElementById('apiKeyInput').value.trim();
+            let customUrl = document.getElementById('coverUrlInput').value.trim();
+            let coverFileInput = document.getElementById('coverFileInput');
+
+            if (!title) { alert("Please enter a game title."); return; }
+
+            if (apiKey) {
+                localStorage.setItem('rawg_api_key', apiKey);
+                document.getElementById('batchApiKeyInput').value = apiKey;
+            }
+            statusDiv.innerText = "Saving entry...";
+
+            let fileObj = fileInput.files.length > 0 ? fileInput.files[0] : null;
+            let fileName = fileObj ? fileObj.name : `${title.replace(/\s+/g, '_')}.${platform === 'PS3' ? 'pkg' : 'iso'}`;
+            let fileSize = fileObj ? (fileObj.size / (1024 * 1024)).toFixed(1) + " MB" : "N/A";
+            let format = fileObj ? fileName.split('.').pop().toUpperCase() : "DIGITAL";
+            
+            let coverUrl = customUrl;
+
+            if (!coverUrl && coverFileInput.files.length > 0) {
+                coverUrl = await readFileAsBase64(coverFileInput.files[0]);
+            } else if (!coverUrl && apiKey) {
+                statusDiv.innerText = "Querying RAWG box art...";
+                let apiCover = await fetchRAWGCover(title, apiKey);
+                if (apiCover) coverUrl = apiCover;
+            }
+
+            let entryData = {
+                title: title,
+                platform: platform,
+                fileName: fileName,
+                fileSize: fileSize,
+                format: format,
+                coverUrl: coverUrl || "https://via.placeholder.com/200x280/2a2a2a/ffffff?text=No+Cover"
+            };
+
+            if (editingIndex !== null) {
+                gameLibrary[editingIndex] = entryData;
+            } else {
+                gameLibrary.push(entryData);
+            }
+
+            localStorage.setItem('game_backup_library', JSON.stringify(gameLibrary));
+            closeAddModal();
+            filterGames();
+        }
+
+        async function saveBatchGames() {
+            let rawText = document.getElementById('batchInput').value;
+            let platform = document.getElementById('batchPlatformSelect').value;
+            let apiKey = document.getElementById('batchApiKeyInput').value.trim();
+            let statusDiv = document.getElementById('batchStatusMsg');
+            let saveBtn = document.getElementById('batchSaveBtn');
+            let cancelBtn = document.getElementById('batchCancelBtn');
+
+            let titles = rawText.split('\n').map(t => t.trim()).filter(t => t.length > 0);
+            if (titles.length === 0) { alert("Please paste at least one title."); return; }
+
+            if (apiKey) {
+                localStorage.setItem('rawg_api_key', apiKey);
+                document.getElementById('apiKeyInput').value = apiKey;
+            }
+
+            saveBtn.disabled = true;
+            cancelBtn.disabled = true;
+
+            for (let i = 0; i < titles.length; i++) {
+                let title = titles[i];
+                statusDiv.innerText = `Fetching ${i + 1} of ${titles.length}: ${title}...`;
+                
+                let coverUrl = "";
+                if (apiKey) {
+                    coverUrl = await fetchRAWGCover(title, apiKey);
+                    await new Promise(resolve => setTimeout(resolve, 300)); 
+                }
+
+                gameLibrary.push({
+                    title: title,
+                    platform: platform,
+                    fileName: `${title.replace(/\s+/g, '_')}.${platform === 'PS3' ? 'pkg' : 'iso'}`,
+                    fileSize: "N/A",
+                    format: "DIGITAL",
+                    coverUrl: coverUrl || "https://via.placeholder.com/200x280/2a2a2a/ffffff?text=No+Cover"
+                });
+            }
+
+            localStorage.setItem('game_backup_library', JSON.stringify(gameLibrary));
+            document.getElementById('batchInput').value = "";
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            closeBatchModal();
+            filterGames();
+        }
+
+        function renderLibrary(list) {
+            let grid = document.getElementById('gameGrid');
+            grid.innerHTML = "";
+
+            if (!list || list.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 40px 10px;">
+                        <p style="font-size: 1.1rem; margin-bottom: 6px;">🔍 No game entries found</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.forEach((game) => {
+                let card = document.createElement('div');
+                card.className = 'game-card';
+                let originalIndex = gameLibrary.indexOf(game);
+                card.onclick = () => inspectGame(originalIndex);
+
+                let cover = game.coverUrl || 'https://via.placeholder.com/200x280/2a2a2a/ffffff?text=No+Cover';
+
+                card.innerHTML = `
+                    <img src="${cover}" alt="${game.title || 'Game'}" onerror="this.src='https://via.placeholder.com/200x280/2a2a2a/ffffff?text=No+Cover'">
+                    <div class="game-card-info">
+                        <div class="game-card-title">${game.title || 'Untitled'}</div>
+                        <div class="game-card-format">${game.platform || 'PC'} • .${game.format || 'DIGITAL'}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function inspectGame(index) {
+            let game = gameLibrary[index];
+            if (!game) return;
+            let panel = document.getElementById('detailsPanel');
+            let cover = game.coverUrl || 'https://via.placeholder.com/200x280/2a2a2a/ffffff?text=No+Cover';
+
+            panel.innerHTML = `
+                <img src="${cover}" class="details-cover" alt="${game.title}">
+                <div class="details-field"><label>Title</label><span>${game.title || 'Untitled'}</span></div>
+                <div class="details-field"><label>Platform</label><span>${game.platform || 'N/A'}</span></div>
+                <div class="details-field"><label>File Name</label><span>${game.fileName || 'N/A'}</span></div>
+                <div class="details-field"><label>Format & Size</label><span>.${game.format || 'DIGITAL'} (${game.fileSize || 'N/A'})</span></div>
+                <div style="display: flex; gap: 8px; width: 100%; margin-top: 15px;">
+                    <button class="btn" style="flex: 1;" onclick="openEditModal(${index})">✏️ Edit</button>
+                    <button class="btn btn-danger" style="flex: 1;" onclick="deleteGame(${index})">Delete</button>
+                </div>
+            `;
+        }
+
+        function deleteGame(index) {
+            gameLibrary.splice(index, 1);
+            localStorage.setItem('game_backup_library', JSON.stringify(gameLibrary));
+            document.getElementById('detailsPanel').innerHTML = `<p style="color: var(--text-muted); font-size: 0.85rem;">Select a game backup to view details</p>`;
+            filterGames();
         }
     </script>
 </body>
